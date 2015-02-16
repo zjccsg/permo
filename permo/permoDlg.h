@@ -1,0 +1,93 @@
+
+// permoDlg.h : 头文件
+//
+
+#pragma once
+#include "afxwin.h"
+#include "MFNetTraffic.h"
+#include "MenuEx.h"
+
+
+// CpermoDlg 对话框
+class CpermoDlg : public CDialog
+{
+// 构造
+public:
+	CpermoDlg(CWnd* pParent = NULL);	// 标准构造函数
+
+// 对话框数据
+	enum { IDD = IDD_PERMO_DIALOG };
+
+	protected:
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
+
+
+// 实现
+protected:
+	HICON m_hIcon;
+
+	// 生成的消息映射函数
+	virtual BOOL OnInitDialog();
+	afx_msg void OnPaint();
+	afx_msg HCURSOR OnQueryDragIcon();
+	DECLARE_MESSAGE_MAP()
+public:
+	void InitSize(BOOL bInit);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	void DrawBackground(CDC* pDC);
+	void DrawInfo(CDC* pDC);
+	// CPU占用
+	unsigned int nCPU;
+	// 内存占用
+	unsigned int nMem;
+	double fNetUp;
+	double fNetDown;
+
+	FILETIME preidleTime;
+	FILETIME prekernelTime;
+	FILETIME preuserTime;
+
+	FILETIME idleTime;
+	FILETIME kernelTime;
+	FILETIME userTime;
+
+	MEMORYSTATUSEX memStatex;
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnTopmost();
+	BOOL bTopmost;
+//	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	CMenuEx m_Menu;
+	CMenuEx m_SubMenu;
+	unsigned int nSkin;
+	afx_msg void OnGreen();
+	afx_msg void OnBlue();
+	afx_msg void OnBlack();
+	afx_msg void OnRed();
+	afx_msg void OnOrange();
+	MFNetTraffic m_cTrafficClassUp;
+	MFNetTraffic m_cTrafficClassDown;
+	// 总的上传流量
+	DWORD total_net_up;
+	// 总的下载流量
+	DWORD total_net_down;
+	BOOL isOnline;
+	// 工作区的大小（除去任务栏）
+	RECT rWorkArea;
+	afx_msg void OnMove(int x, int y);
+	// 窗口当前位置
+	RECT rCurPos;
+	afx_msg void OnExit();
+	void InitPopMenu();
+	MENUITEM mi1;
+	MENUITEM mi2;
+	MENUITEM mi3;
+	MENUITEM mi4;
+	MENUITEM mi5;
+	MENUITEM mi6;
+	MENUITEM mi7;
+	MENUITEM mi8;
+	BOOL GetNetStatus();
+	BOOL OpenConfig();
+	BOOL SaveConfig();
+};
