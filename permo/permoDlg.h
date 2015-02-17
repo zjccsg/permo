@@ -55,7 +55,6 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnTopmost();
 	BOOL bTopmost;
-//	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	CMenuEx m_Menu;				//右键弹出菜单
 	CMenuEx m_SubMenu;			//右键弹出二级菜单
@@ -87,7 +86,7 @@ public:
 	MENUITEM mi6;
 	MENUITEM mi7;
 	MENUITEM mi8;
-	BOOL GetNetStatus();
+	//BOOL GetNetStatus();
 	BOOL OpenConfig();
 	BOOL SaveConfig();
 };

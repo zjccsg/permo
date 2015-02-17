@@ -6,8 +6,6 @@
 #include "permo.h"
 #include "permoDlg.h"
 #include "afxdialogex.h"
-#include <Wininet.h> //判断网络状态用到
-#pragma comment(lib, "Wininet.lib")
 
 
 #ifdef _DEBUG
@@ -92,7 +90,7 @@ BOOL CpermoDlg::OnInitDialog()
 	{
 		return -1;
 	}
-	isOnline = GetNetStatus();
+	//isOnline = GetNetStatus();
 	//创建菜单
 	InitPopMenu();
 	//m_Menu.LoadMenu(IDR_MENU_POP);//编辑好的菜单资源
@@ -122,6 +120,7 @@ BOOL CpermoDlg::OnInitDialog()
 		if (m_cTrafficClassDown.GetInterfaceBandwidth(i) != 0)
 		{
 			SelectedInterface = i;
+			isOnline = TRUE;
 			break;
 		}
 	}
@@ -642,23 +641,6 @@ void CpermoDlg::InitPopMenu()
 	mi8.strText = _T("退出");
 	mi8.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_EXIT));
 	m_Menu.AppendMenuW(MF_OWNERDRAW | MF_BYCOMMAND, IDM_EXIT, (LPCTSTR)&mi8);
-}
-
-
-BOOL CpermoDlg::GetNetStatus()
-{
-	DWORD flag, reserved;
-	BOOL bRet;
-	flag = 0;//INTERNET_CONNECTION_OFFLINE ;
-	reserved = 0;
-	TCHAR connectionname[1024];
-	bRet = InternetGetConnectedStateEx(
-		&flag,	//OUT LPDWORD lpdwFlags,
-		(LPTSTR)&connectionname,//OUT LPTSTR lpszConnectionName,
-		1024,//IN DWORD dwNameLen,
-		0//IN DWORD dwReserved
-		);
-	return bRet;
 }
 
 
