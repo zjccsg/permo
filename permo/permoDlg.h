@@ -32,16 +32,16 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	void InitSize(BOOL bInit);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	void DrawBackground(CDC* pDC);
-	void DrawInfo(CDC* pDC);
+	void InitSize(BOOL bInit);								//初始化窗口大小和位置
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);	
+	void DrawBackground(CDC* pDC);							//绘制界面背景
+	void DrawInfo(CDC* pDC);								//绘制界面信息
 	// CPU占用
 	unsigned int nCPU;
 	// 内存占用
 	unsigned int nMem;
-	double fNetUp;
-	double fNetDown;
+	double fNetUp;											//上传速度
+	double fNetDown;										//下载速度
 
 	FILETIME preidleTime;
 	FILETIME prekernelTime;
@@ -57,9 +57,9 @@ public:
 	BOOL bTopmost;
 //	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
-	CMenuEx m_Menu;
-	CMenuEx m_SubMenu;
-	unsigned int nSkin;
+	CMenuEx m_Menu;				//右键弹出菜单
+	CMenuEx m_SubMenu;			//右键弹出二级菜单
+	unsigned int nSkin;			//皮肤编号
 	afx_msg void OnGreen();
 	afx_msg void OnBlue();
 	afx_msg void OnBlack();

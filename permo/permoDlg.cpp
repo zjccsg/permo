@@ -62,7 +62,6 @@ BEGIN_MESSAGE_MAP(CpermoDlg, CDialog)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_TIMER()
 	ON_COMMAND(IDM_TOPMOST, &CpermoDlg::OnTopmost)
-//	ON_WM_CONTEXTMENU()
 	ON_WM_RBUTTONDOWN()
 	ON_COMMAND(IDM_GREEN, &CpermoDlg::OnGreen)
 	ON_COMMAND(IDM_BLUE, &CpermoDlg::OnBlue)
@@ -85,7 +84,6 @@ BOOL CpermoDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
-	// TODO:  在此添加额外的初始化代码
 	::SystemParametersInfo(SPI_GETWORKAREA, 0, &rWorkArea, 0);   // 获得工作区大小
 	BOOL bRet = OpenConfig();
 	InitSize(bRet);
@@ -127,11 +125,12 @@ BOOL CpermoDlg::OnInitDialog()
 			break;
 		}
 	}
-//	m_cTrafficClassDown.GetTraffic(SelectedInterface);
-//	m_cTrafficClassUp.GetTraffic(SelectedInterface);
+	//设置网络监控类型
 	m_cTrafficClassDown.SetTrafficType(MFNetTraffic::IncomingTraffic);
 	m_cTrafficClassUp.SetTrafficType(MFNetTraffic::OutGoingTraffic);
+	//取消任务栏显示
 	SetWindowLong(GetSafeHwnd(), GWL_EXSTYLE, WS_EX_TOOLWINDOW);
+	//每隔一秒刷新各种信息
 	SetTimer(1, 1000, NULL);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -162,7 +161,7 @@ void CpermoDlg::OnPaint()
 	else
 	{
 		CPaintDC dc(this);
-		//解决闪烁问题
+		//解决闪烁问题,双缓冲绘图
 		//可以单独建立一个内存DC类
 		RECT rcClient;
 		this->GetClientRect(&rcClient);
@@ -337,36 +336,6 @@ void CpermoDlg::DrawBackground(CDC* pDC)
 // 	GreenBrush.DeleteObject();
 // 	WhiteBrush.DeleteObject();
 }
-/*
-void CpermoDlg::DrawBackground(CDC* pDC)
-{
-CPen *pWhitePen = new CPen;
-pWhitePen->CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
-CBrush *pGreenBrush = new CBrush;
-pGreenBrush->CreateSolidBrush(RGB(2, 200, 20));
-CPen *pOldPen = pDC->SelectObject(pWhitePen);
-CBrush *pOldBrush = pDC->SelectObject(pGreenBrush);
-
-//左侧矩形
-pDC->Rectangle(0, 0, 20, 20);
-//右侧矩形
-pDC->Rectangle(130, 0, 150, 20);
-CBrush *pWhiteBrush = new CBrush;
-pWhiteBrush->CreateSolidBrush(RGB(255, 255, 255));
-pDC->SelectObject(pWhiteBrush);
-//中间矩形
-pDC->Rectangle(20, 0, 130, 20);
-
-pDC->SelectObject(pOldPen);
-pDC->SelectObject(pOldBrush);
-pWhitePen->DeleteObject();
-pGreenBrush->DeleteObject();
-pWhiteBrush->DeleteObject();
-delete pWhitePen;
-delete pGreenBrush;
-delete pWhiteBrush;
-}
-*/
 
 void CpermoDlg::DrawInfo(CDC* pDC)
 {
@@ -609,6 +578,7 @@ void CpermoDlg::OnOrange()
 }
 
 
+//禁止移动到桌面之下
 void CpermoDlg::OnMove(int x, int y)
 {
 	CDialog::OnMove(x, y);
@@ -642,11 +612,6 @@ void CpermoDlg::InitPopMenu()
 	mi1.strText = _T("窗口置顶");
 	mi1.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_TOPMOST));
 	m_Menu.AppendMenuW(MF_OWNERDRAW | MF_BYCOMMAND, IDM_TOPMOST, (LPCTSTR)&mi1);
-
-// 	MENUITEM mi2;
-// 	mi2.bkColor = RGB(220, 220, 220);
-// 	mi2.strText = _T("界面风格");
-// 	m_Menu.AppendMenuW(MF_OWNERDRAW | MF_POPUP, NULL, (LPCTSTR)&mi2);
 
 	//MENUITEM mi3;
 	mi3.strText = _T("绿色");

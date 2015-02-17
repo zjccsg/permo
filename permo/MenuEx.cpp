@@ -53,11 +53,6 @@ void CMenuEx::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
 		DrawIconEx(hDC, rcIcon.left, rcIcon.top, pMi->hIcon, rcIcon.Width(), rcIcon.Height(), 0, NULL, DI_NORMAL);
 	}
 
-// 	CRect rcIcon = rcItem;
-// 	rcIcon.right = rcItem.left + rcItem.Height();
-// 	rcIcon.DeflateRect(2, 2, 2, 2);
-// 	DrawIconEx(hDC, rcIcon.left, rcIcon.top, pMi->hIcon, rcIcon.Width(), rcIcon.Height(), 0, NULL, DI_NORMAL);
-
 	CRect rcText = rcItem;
 	rcText.left = rcItem.Height();
 

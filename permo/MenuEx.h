@@ -14,7 +14,6 @@ public:
 	CMenuEx();
 	~CMenuEx();
 	virtual void DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/);
-//	virtual void MeasureItem(LPMEASUREITEMSTRUCT /*lpMeasureItemStruct*/);
 	virtual void MeasureItem(LPMEASUREITEMSTRUCT /*lpMeasureItemStruct*/);
 };
 
