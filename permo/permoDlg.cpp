@@ -113,11 +113,12 @@ BOOL CpermoDlg::OnInitDialog()
 	nMem = 0;
 	//默认监视的接口
 	SelectedInterface = 0;
+	MFNetTraffic m_cTrafficClassTemp;
 	//更新：增加对所有发现的网络接口监控遍历，防止监控的接口非连接网络的接口
-	int nCount = m_cTrafficClassDown.GetNetworkInterfacesCount();
+	int nCount = m_cTrafficClassTemp.GetNetworkInterfacesCount();
 	for (int i = 0; i < nCount; i++)
 	{
-		if (m_cTrafficClassDown.GetInterfaceBandwidth(i) != 0)
+		if (m_cTrafficClassTemp.GetInterfaceTotalTraffic(i) > 0)
 		{
 			SelectedInterface = i;
 			isOnline = TRUE;
