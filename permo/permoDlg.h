@@ -1,11 +1,10 @@
-
 // permoDlg.h : 头文件
 //
 
 #pragma once
-#include "afxwin.h"
 #include "MFNetTraffic.h"
 #include "MenuEx.h"
+
 
 
 // CpermoDlg 对话框
@@ -31,7 +30,9 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+
 public:
+	int SelectedInterface;
 	void InitSize(BOOL bInit);								//初始化窗口大小和位置
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);	
 	void DrawBackground(CDC* pDC);							//绘制界面背景
@@ -57,7 +58,7 @@ public:
 	BOOL bTopmost;
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	CMenuEx m_Menu;				//右键弹出菜单
-	CMenuEx m_SubMenu;			//右键弹出二级菜单
+	CMenuEx m_SubMenu_Skin;			//右键弹出二级菜单(皮肤风格二级菜单)
 	unsigned int nSkin;			//皮肤编号
 	afx_msg void OnGreen();
 	afx_msg void OnBlue();
@@ -77,7 +78,7 @@ public:
 	// 窗口当前位置
 	RECT rCurPos;
 	afx_msg void OnExit();
-	void InitPopMenu();
+	void InitPopMenu(int nCount);
 	MENUITEM mi1;
 	MENUITEM mi2;
 	MENUITEM mi3;
@@ -86,7 +87,13 @@ public:
 	MENUITEM mi6;
 	MENUITEM mi7;
 	MENUITEM mi8;
+	MENUITEM mi9;
 	//BOOL GetNetStatus();
 	BOOL OpenConfig();
 	BOOL SaveConfig();
+	afx_msg LRESULT OnNcHitTest(CPoint point);
+	afx_msg void OnMouseHover(UINT nFlags, CPoint point);
+	afx_msg void OnMouseLeave();
+	BOOL bAutoHide;
+	void OnAutoHide(void);
 };
