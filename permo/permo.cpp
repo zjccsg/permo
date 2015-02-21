@@ -35,6 +35,15 @@ CpermoApp theApp;
 
 BOOL CpermoApp::InitInstance()
 {
+	m_hMutex = CreateMutex(NULL, TRUE, _T("permo"));
+	// 检测是否已经创建Mutex
+	// 如果已经创建，就终止进程的启动
+	if ((m_hMutex != NULL) && (GetLastError() == ERROR_ALREADY_EXISTS))
+	{
+		ReleaseMutex(m_hMutex);
+		AfxMessageBox(_T("亲，程序已经在运行了:)"));
+		return FALSE;
+	}
 	// 如果一个运行在 Windows XP 上的应用程序清单指定要
 	// 使用 ComCtl32.dll 版本 6 或更高版本来启用可视化方式，
 	//则需要 InitCommonControlsEx()。否则，将无法创建窗口。
@@ -73,4 +82,17 @@ BOOL CpermoApp::InitInstance()
 	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
 	//  而不是启动应用程序的消息泵。
 	return FALSE;
+}
+
+int CpermoApp::ExitInstance()
+{
+	// TODO:  在此添加专用代码和/或调用基类
+
+	if (m_hMutex != NULL)
+	{
+		ReleaseMutex(m_hMutex);
+		CloseHandle(m_hMutex);
+	}
+
+	return CWinApp::ExitInstance();
 }

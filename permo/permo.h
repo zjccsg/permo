@@ -26,6 +26,8 @@ public:
 // 实现
 
 	DECLARE_MESSAGE_MAP()
+	HANDLE m_hMutex;//为了只启动一个实例
+	virtual int ExitInstance();
 };
 
 extern CpermoApp theApp;
