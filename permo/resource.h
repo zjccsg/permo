@@ -14,14 +14,16 @@
 #define IDI_RED                         136
 #define IDI_SKIN                        137
 #define IDI_TOPMOST                     138
-#define IDI_ICON1                       139
 #define IDI_AUTOHIDE                    139
+#define IDI_TRANS                       140
+#define IDI_ICON1                       141
+#define IDI_START                       141
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        140
+#define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           101

@@ -20,6 +20,21 @@
 #define IDM_EXIT                        10007
 #define IDM_AUTOHIDE					10008
 
+#define IDM_TRANS0						10009
+#define IDM_TRANS10						10010
+#define IDM_TRANS20						10011
+#define IDM_TRANS30						10012
+#define IDM_TRANS40						10013
+#define IDM_TRANS50						10014
+#define IDM_TRANS60						10015
+#define IDM_TRANS70						10016
+#define IDM_TRANS80						10017
+#define IDM_TRANS90						10018
+
+#define IDM_AUTOSTART					10019
+
+#define START_INDEX						20000
+
 __int64 CompareFileTime(FILETIME time1, FILETIME time2)
 {
 	__int64 a = time1.dwHighDateTime << 32 | time1.dwLowDateTime;
@@ -33,6 +48,7 @@ CpermoDlg::CpermoDlg(CWnd* pParent /*=NULL*/)
 	, SelectedInterface(0)
 	, nCPU(0)
 	, nMem(0)
+	, nTrans(255)
 	, fNetUp(0.0)
 	, fNetDown(0.0)
 	, bTopmost(TRUE)
@@ -85,23 +101,30 @@ BOOL CpermoDlg::OnInitDialog()
 	// TODO: 在此添加额外的初始化代码
 	::SystemParametersInfo(SPI_GETWORKAREA, 0, &rWorkArea, 0);   // 获得工作区大小
 	BOOL bRet = OpenConfig();
+
 	InitSize(bRet);
 	GetWindowRect(&rCurPos);
 	if (!::GetSystemTimes(&preidleTime, &prekernelTime, &preuserTime))
 	{
 		return -1;
 	}
+	bRet = m_SubMenu_NetPort.CreatePopupMenu();
+	ASSERT(bRet);
 	MFNetTraffic m_cTrafficClassTemp;
 	//更新：增加对所有发现的网络接口监控遍历，防止监控的接口非连接网络的接口
+	double tottraff = 0;
+	CString tmp, tmp2;
 	int nCount = m_cTrafficClassTemp.GetNetworkInterfacesCount();
 	for (int i = 0; i <= nCount; i++)
 	{
-		if (m_cTrafficClassTemp.GetInterfaceTotalTraffic(i) > 0)
+		if ((tottraff = m_cTrafficClassTemp.GetInterfaceTotalTraffic(i) / (1024.0*1024.0)) > 0)
 		{
 			SelectedInterface = i;
 			isOnline = TRUE;
-			break;
 		}
+		m_cTrafficClassTemp.GetNetworkInterfaceName(&tmp, i);
+		tmp2.Format(_T("%s : %.1f MB"), tmp, tottraff);
+		m_SubMenu_NetPort.AppendMenu(MF_STRING, i + START_INDEX, tmp2);
 	}
 	//创建菜单
 	InitPopMenu(nCount);
@@ -121,6 +144,7 @@ BOOL CpermoDlg::OnInitDialog()
 		m_Menu.CheckMenuItem(IDM_AUTOHIDE, MF_BYCOMMAND | MF_CHECKED);
 	}
 	m_Menu.CheckMenuItem(nSkin, MF_BYCOMMAND | MF_CHECKED); // 在前面打钩 
+	IfAutoRun();//判断是否已经开机自启
 
 	//设置网络监控类型
 	m_cTrafficClassDown.SetTrafficType(MFNetTraffic::IncomingTraffic);
@@ -130,7 +154,10 @@ BOOL CpermoDlg::OnInitDialog()
 	SetWindowLong(GetSafeHwnd(), GWL_EXSTYLE, WS_EX_TOOLWINDOW);
 	//每隔一秒刷新各种信息
 	SetTimer(1, 1000, NULL);
-
+	
+	::SetWindowLong( m_hWnd, GWL_EXSTYLE, GetWindowLong(m_hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_CHECKED);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -361,8 +388,22 @@ void CpermoDlg::DrawInfo(CDC* pDC)
 	CString strCPU, strMem, strNetUp, strNetDown;
 	strCPU.Format(_T("%d"), nCPU);
 	strMem.Format(_T("%d"), nMem);
-	strNetUp.Format(_T("%.1fKB/s"), fNetUp);
-	strNetDown.Format(_T("%.1fKB/s"), fNetDown);
+	if (fNetUp >= 1000)
+	{
+		strNetUp.Format(_T("%.1fMB/s"), fNetUp/1024.0);
+	}
+	else
+	{
+		strNetUp.Format(_T("%.1fKB/s"), fNetUp);
+	}
+	if (fNetDown >= 1000)
+	{
+		strNetDown.Format(_T("%.1fMB/s"), fNetDown/1024.0);
+	}
+	else
+	{
+		strNetDown.Format(_T("%.1fKB/s"), fNetDown);
+	}
 	//pDC->TextOut(1, 1, strCPU);
 	CRect rText;
 	rText.left = 1;
@@ -486,6 +527,7 @@ void CpermoDlg::OnRButtonDown(UINT nFlags, CPoint point)
 	CPoint p;
 	//传递过来的坐标为相对于窗口左上角的坐标，WM_CONTEXTMENU传递过来的是屏幕坐标
 	GetCursorPos(&p);//鼠标点的屏幕坐标
+	m_Menu.CheckMenuItem(SelectedInterface + START_INDEX, MF_BYCOMMAND | MF_CHECKED); 
 	int nID = m_Menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_RETURNCMD, p.x, p.y, this);
 	switch (nID)
 	{
@@ -513,9 +555,44 @@ void CpermoDlg::OnRButtonDown(UINT nFlags, CPoint point)
 	case IDM_AUTOHIDE:
 		OnAutoHide();
 		break;
+	case IDM_TRANS0:
+		OnTrans0();
+		break;
+	case IDM_TRANS10:
+		OnTrans10();
+		break;
+	case IDM_TRANS20:
+		OnTrans20();
+		break;
+	case IDM_TRANS30:
+		OnTrans30();
+		break;
+	case IDM_TRANS40:
+		OnTrans40();
+		break;
+	case IDM_TRANS50:
+		OnTrans50();
+		break;
+	case IDM_TRANS60:
+		OnTrans60();
+		break;
+	case IDM_TRANS70:
+		OnTrans70();
+		break;
+	case IDM_TRANS80:
+		OnTrans80();
+		break;
+	case IDM_TRANS90:
+		OnTrans90();
+		break;
+	case IDM_AUTOSTART:
+		SetAutoRun();
+		break;
 	case 0:
 		return;
 	default:
+		{m_Menu.CheckMenuItem(SelectedInterface + START_INDEX, MF_BYCOMMAND | MF_UNCHECKED);
+		SelectedInterface = nID - START_INDEX; }
 		break;
 	}
 
@@ -621,6 +698,8 @@ void CpermoDlg::InitPopMenu(int nCount)
 	ASSERT(bRet);
 	bRet = m_SubMenu_Skin.CreatePopupMenu();
 	ASSERT(bRet);
+	bRet = m_SubMenu_Trans.CreatePopupMenu();
+	ASSERT(bRet);
 	//MENUITEM mi1;
 	mi1.strText = _T("窗口置顶");
 	mi1.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_TOPMOST));
@@ -629,6 +708,11 @@ void CpermoDlg::InitPopMenu(int nCount)
 	mi9.strText = _T("贴边隐藏");
 	mi9.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_AUTOHIDE));
 	m_Menu.AppendMenuW(MF_OWNERDRAW | MF_BYCOMMAND, IDM_AUTOHIDE, (LPCTSTR)&mi9);
+
+	mi11.strText = _T("监控接口");
+	mi11.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_NET));
+	m_Menu.AppendMenuW(MF_BYPOSITION | MF_POPUP | MF_OWNERDRAW,
+		(UINT)m_SubMenu_NetPort.m_hMenu, (LPCTSTR)&mi11);
 
 	//MENUITEM mi3;
 	mi3.strText = _T("绿色");
@@ -655,6 +739,27 @@ void CpermoDlg::InitPopMenu(int nCount)
 	mi2.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_SKIN));
 	m_Menu.AppendMenuW(MF_BYPOSITION | MF_POPUP | MF_OWNERDRAW,
 		(UINT)m_SubMenu_Skin.m_hMenu, (LPCTSTR)&mi2);
+	
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS0, _T("不透明"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS10, _T("10%"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS20, _T("20%"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS30, _T("30%"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS40, _T("40%"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS50, _T("50%"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS60, _T("60%"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS70, _T("70%"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS80, _T("80%"));
+	m_SubMenu_Trans.AppendMenu(MF_BYCOMMAND, IDM_TRANS90, _T("90%"));
+
+	mi10.strText = _T("透明度");
+	mi10.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_TRANS));
+	m_Menu.AppendMenuW(MF_BYPOSITION | MF_POPUP | MF_OWNERDRAW,
+		(UINT)m_SubMenu_Trans.m_hMenu, (LPCTSTR)&mi10);
+
+	mi12.strText = _T("开机自启");
+	mi12.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_START));
+	m_Menu.AppendMenuW(MF_OWNERDRAW | MF_BYCOMMAND, IDM_AUTOSTART, (LPCTSTR)&mi12);
+
 	//MENUITEM mi8;
 	mi8.strText = _T("退出");
 	mi8.hIcon = ::LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_EXIT));
@@ -668,12 +773,13 @@ BOOL CpermoDlg::OpenConfig()
 	::GetCurrentDirectory(256, direc);//获取当前目录函数
 	TCHAR temp[256];
 	wsprintf(temp, _T("%s\\config.ini"), direc);
-	int left, top, topmost, skin, autohide;
+	int left, top, topmost, skin, autohide, trans;
 	left = ::GetPrivateProfileInt(_T("Main"), _T("left"), -1, temp);
 	top = ::GetPrivateProfileInt(_T("Main"), _T("top"), -1, temp);
 	topmost = ::GetPrivateProfileInt(_T("Main"), _T("topmost"), -1, temp);
 	skin = ::GetPrivateProfileInt(_T("Main"), _T("skin"), -1, temp);
 	autohide = ::GetPrivateProfileInt(_T("Main"), _T("autohide"), -1, temp);
+	trans = ::GetPrivateProfileInt(_T("Main"), _T("trans"), -1, temp);
 	if (-1 == left || left < 0)
 	{
 		return FALSE;
@@ -695,11 +801,16 @@ BOOL CpermoDlg::OpenConfig()
 	{
 		return FALSE;
 	}
+	if (trans < 0 || trans > 255)
+	{
+		return FALSE;
+	}
 	rCurPos.left = left;
 	rCurPos.top = top;
 	bTopmost = topmost;
 	nSkin = skin;
 	bAutoHide = autohide;
+	nTrans = trans;
 	return TRUE;
 }
 
@@ -710,17 +821,19 @@ BOOL CpermoDlg::SaveConfig()
 	::GetCurrentDirectory(256, direc);//获取当前目录函数
 	TCHAR temp[256];
 	wsprintf(temp, _T("%s\\config.ini"), direc);
-	TCHAR cLeft[32], cTop[32], cTopMost[32], cSkin[32], cAutoHide[32];
+	TCHAR cLeft[32], cTop[32], cTopMost[32], cSkin[32], cAutoHide[32], cTrans[32];
 	_itow_s(rCurPos.left, cLeft, 10);
 	_itow_s(rCurPos.top, cTop, 10);
 	_itow_s(bTopmost, cTopMost, 10);
 	_itow_s(nSkin, cSkin, 10);
 	_itow_s(bAutoHide, cAutoHide, 10);
+	_itow_s(nTrans, cTrans, 10);
 	::WritePrivateProfileString(_T("Main"), _T("left"), cLeft, temp);
 	::WritePrivateProfileString(_T("Main"), _T("top"), cTop, temp);
 	::WritePrivateProfileString(_T("Main"), _T("topmost"), cTopMost, temp);
 	::WritePrivateProfileString(_T("Main"), _T("skin"), cSkin, temp);
 	::WritePrivateProfileString(_T("Main"), _T("autohide"), cAutoHide, temp);
+	::WritePrivateProfileString(_T("Main"), _T("trans"), cTrans, temp);
 	return TRUE;
 }
 LRESULT CpermoDlg::OnNcHitTest(CPoint point)
@@ -791,5 +904,127 @@ void CpermoDlg::OnAutoHide(void)
 	{
 		bAutoHide = TRUE;
 		m_Menu.CheckMenuItem(IDM_AUTOHIDE, MF_BYCOMMAND | MF_CHECKED); // 在前面打钩 
+	}
+}
+
+void CpermoDlg::OnTrans0(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS0, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 255;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans10(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS10, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 230;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans20(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS20, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 205;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans30(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS30, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 180;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans40(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS40, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 155;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans50(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS50, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 130;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans60(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS60, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 105;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans70(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS70, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 80;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans80(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS80, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 55;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+void CpermoDlg::OnTrans90(void)
+{
+	m_Menu.CheckMenuItem(IDM_TRANS0+(255-nTrans)/25, MF_BYCOMMAND | MF_UNCHECKED);
+	m_Menu.CheckMenuItem(IDM_TRANS90, MF_BYCOMMAND | MF_CHECKED);
+	nTrans = 30;
+	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
+}
+
+//设置开机自启动
+//先查找，找到就删除，找不到就创建
+void CpermoDlg::SetAutoRun(void)
+{
+	HKEY hKey;
+	CString strRegPath = _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run");//找到系统的启动项
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, strRegPath, 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+	{
+		if (RegQueryValueEx(hKey, _T("permo"), NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+		{
+			RegDeleteValue (hKey,_T("permo"));   
+			m_Menu.CheckMenuItem(IDM_AUTOSTART, MF_BYCOMMAND | MF_UNCHECKED);
+		}
+		else
+		{
+			TCHAR szModule[_MAX_PATH];
+			GetModuleFileName(NULL, szModule, _MAX_PATH);//得到本程序自身的全路径
+			RegSetValueEx(hKey,_T("permo"), 0, REG_SZ, (LPBYTE)szModule, wcslen(szModule)*sizeof(TCHAR)); //添加一个子Key,并设置值
+			m_Menu.CheckMenuItem(IDM_AUTOSTART, MF_BYCOMMAND | MF_CHECKED);
+		}
+		RegCloseKey(hKey); //关闭注册表
+	}
+	else
+	{
+		AfxMessageBox(_T("无法设置！"));   
+	}
+}
+
+void CpermoDlg::IfAutoRun(void)
+{
+	HKEY hKey;
+	CString strRegPath = _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run");//找到系统的启动项
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, strRegPath, 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+	{
+		if (RegQueryValueEx(hKey, _T("permo"), NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+		{
+			m_Menu.CheckMenuItem(IDM_AUTOSTART, MF_BYCOMMAND | MF_CHECKED);
+		}
+		RegCloseKey(hKey); //关闭注册表
 	}
 }

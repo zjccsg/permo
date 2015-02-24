@@ -41,6 +41,7 @@ public:
 	unsigned int nCPU;
 	// 内存占用
 	unsigned int nMem;
+	unsigned int nTrans;									//透明度默认255
 	double fNetUp;											//上传速度
 	double fNetDown;										//下载速度
 
@@ -59,6 +60,8 @@ public:
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	CMenuEx m_Menu;				//右键弹出菜单
 	CMenuEx m_SubMenu_Skin;			//右键弹出二级菜单(皮肤风格二级菜单)
+	CMenu m_SubMenu_NetPort;
+	CMenu m_SubMenu_Trans;
 	unsigned int nSkin;			//皮肤编号
 	afx_msg void OnGreen();
 	afx_msg void OnBlue();
@@ -87,7 +90,10 @@ public:
 	MENUITEM mi6;
 	MENUITEM mi7;
 	MENUITEM mi8;
-	MENUITEM mi9;
+	MENUITEM mi9;	//贴边收起
+	MENUITEM mi10;	//透明度调节
+	MENUITEM mi11;	//接口选择
+	MENUITEM mi12;	//设置开机自启动
 	//BOOL GetNetStatus();
 	BOOL OpenConfig();
 	BOOL SaveConfig();
@@ -96,4 +102,16 @@ public:
 	afx_msg void OnMouseLeave();
 	BOOL bAutoHide;
 	void OnAutoHide(void);
+	void OnTrans0(void);
+	void OnTrans10(void);
+	void OnTrans20(void);
+	void OnTrans30(void);
+	void OnTrans40(void);
+	void OnTrans50(void);
+	void OnTrans60(void);
+	void OnTrans70(void);
+	void OnTrans80(void);
+	void OnTrans90(void);
+	void SetAutoRun(void);
+	void IfAutoRun(void);
 };
