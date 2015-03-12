@@ -186,7 +186,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\MenuEx.cpp"
+				RelativePath=".\InfoDlg.cpp"
 				>
 			</File>
 			<File
@@ -199,6 +199,10 @@
 			</File>
 			<File
 				RelativePath=".\permoDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ProInfo.cpp"
 				>
 			</File>
 			<File
@@ -228,7 +232,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\MenuEx.h"
+				RelativePath=".\InfoDlg.h"
 				>
 			</File>
 			<File
@@ -241,6 +245,10 @@
 			</File>
 			<File
 				RelativePath=".\permoDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ProInfo.h"
 				>
 			</File>
 			<File
@@ -262,35 +270,7 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\res\autohide.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\res\black.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\res\blue.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\res\check.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\res\exit.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\res\green.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\res\net.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\res\orange.ico"
+				RelativePath=".\res\down.ico"
 				>
 			</File>
 			<File
@@ -306,18 +286,22 @@
 				>
 			</File>
 			<File
-				RelativePath=".\res\red.ico"
+				RelativePath=".\res\process.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\res\skin.ico"
+				RelativePath=".\res\proinfobackground.bmp"
 				>
 			</File>
 			<File
-				RelativePath=".\res\topmost.ico"
+				RelativePath=".\res\up.ico"
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\ClassDiagram1.cd"
+			>
+		</File>
 		<File
 			RelativePath=".\ReadMe.txt"
 			>

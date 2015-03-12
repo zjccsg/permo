@@ -3,9 +3,7 @@
 
 #pragma once
 #include "MFNetTraffic.h"
-#include "MenuEx.h"
-
-
+#include "InfoDlg.h"
 
 // CpermoDlg 对话框
 class CpermoDlg : public CDialog
@@ -33,7 +31,7 @@ protected:
 
 public:
 	int SelectedInterface;
-	void InitSize(BOOL bInit);								//初始化窗口大小和位置
+	void InitSize();								//初始化窗口大小和位置
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);	
 	void DrawBackground(CDC* pDC);							//绘制界面背景
 	void DrawInfo(CDC* pDC);								//绘制界面信息
@@ -53,16 +51,16 @@ public:
 	FILETIME kernelTime;
 	FILETIME userTime;
 
-	MEMORYSTATUSEX memStatex;
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnTopmost();
 	BOOL bTopmost;
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
-	CMenuEx m_Menu;				//右键弹出菜单
-	CMenuEx m_SubMenu_Skin;			//右键弹出二级菜单(皮肤风格二级菜单)
+	CMenu m_Menu;				//右键弹出菜单
+	CMenu m_SubMenu_Skin;			//右键弹出二级菜单(皮肤风格二级菜单)
 	CMenu m_SubMenu_NetPort;
+	CMenu m_SubMenu_ShowWay;		//明细窗口显示方式默认0鼠标移过显示1单击显示
 	CMenu m_SubMenu_Trans;
-	unsigned int nSkin;			//皮肤编号
+	CMenu m_SubMenu_FontSize;
 	afx_msg void OnGreen();
 	afx_msg void OnBlue();
 	afx_msg void OnBlack();
@@ -70,34 +68,17 @@ public:
 	afx_msg void OnOrange();
 	MFNetTraffic m_cTrafficClassUp;
 	MFNetTraffic m_cTrafficClassDown;
-	// 总的上传流量
-	DWORD total_net_up;
-	// 总的下载流量
-	DWORD total_net_down;
 	BOOL isOnline;
 	// 工作区的大小（除去任务栏）
 	RECT rWorkArea;
-	afx_msg void OnMove(int x, int y);
 	// 窗口当前位置
-	RECT rCurPos;
+	CRect rCurPos;
 	afx_msg void OnExit();
 	void InitPopMenu(int nCount);
-	MENUITEM mi1;
-	MENUITEM mi2;
-	MENUITEM mi3;
-	MENUITEM mi4;
-	MENUITEM mi5;
-	MENUITEM mi6;
-	MENUITEM mi7;
-	MENUITEM mi8;
-	MENUITEM mi9;	//贴边收起
-	MENUITEM mi10;	//透明度调节
-	MENUITEM mi11;	//接口选择
-	MENUITEM mi12;	//设置开机自启动
 	//BOOL GetNetStatus();
-	BOOL OpenConfig();
+	void OpenConfig();
 	BOOL SaveConfig();
-	afx_msg LRESULT OnNcHitTest(CPoint point);
+//	afx_msg LRESULT OnNcHitTest(CPoint point);
 	afx_msg void OnMouseHover(UINT nFlags, CPoint point);
 	afx_msg void OnMouseLeave();
 	BOOL bAutoHide;
@@ -114,4 +95,17 @@ public:
 	void OnTrans90(void);
 	void SetAutoRun(void);
 	void IfAutoRun(void);
+	CInfoDlg *pInfoDlg;
+	void CreateInfoDlg(void);
+	void MoveInfoDlg(void);
+	BOOL SetWorkDir(void);
+	unsigned int nShowWay; //详情窗口弹出方式0默认悬停即弹出1单击鼠标左键弹出
+	void SetShowWay(void);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+//	afx_msg void OnNcLButtonUp(UINT nHitTest, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	BOOL _bMouseTrack;
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	void ShowNetInfo(void);
+	void SetFontSize(UINT fontSize);
 };

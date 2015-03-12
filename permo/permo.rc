@@ -71,17 +71,9 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\permo.ico"
-IDI_BLACK               ICON                    "res\\black.ico"
-IDI_BLUE                ICON                    "res\\blue.ico"
-IDI_CHECK               ICON                    "res\\check.ico"
-IDI_EXIT                ICON                    "res\\exit.ico"
-IDI_GREEN               ICON                    "res\\green.ico"
-IDI_NET                 ICON                    "res\\net.ico"
-IDI_ORANGE              ICON                    "res\\orange.ico"
-IDI_RED                 ICON                    "res\\red.ico"
-IDI_SKIN                ICON                    "res\\skin.ico"
-IDI_TOPMOST             ICON                    "res\\topmost.ico"
-IDI_AUTOHIDE            ICON                    "res\\autohide.ico"
+IDI_PROCESS             ICON                    "res\\process.ico"
+IDI_DOWN                ICON                    "res\\down.ico"
+IDI_UP                  ICON                    "res\\up.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -95,6 +87,12 @@ FONT 9, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
 END
 
+IDD_INFO_DIALOG DIALOGEX 0, 0, 101, 129
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -102,8 +100,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,2
- PRODUCTVERSION 1,0,0,2
+ FILEVERSION 1,0,0,9
+ PRODUCTVERSION 1,0,0,9
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -119,12 +117,12 @@ BEGIN
         BLOCK "080403a8"
         BEGIN
             VALUE "FileDescription", "系统性能监控悬浮窗"
-            VALUE "FileVersion", "1.0.0.2"
+            VALUE "FileVersion", "1.0.0.9"
             VALUE "InternalName", "permo.exe"
             VALUE "LegalCopyright", "zjccsg"
             VALUE "OriginalFilename", "permo.exe"
             VALUE "ProductName", "系统性能监控悬浮窗"
-            VALUE "ProductVersion", "1.0.0.2"
+            VALUE "ProductVersion", "1.0.0.9"
         END
     END
     BLOCK "VarFileInfo"
@@ -147,11 +145,18 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 191
         TOPMARGIN, 7
-        BOTTOMMARGIN, 29
+        BOTTOMMARGIN, 28
     END
 END
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_PROINFO_BACK        BITMAP                  "res\\proinfobackground.bmp"
 #endif    // 中文(中华人民共和国) resources
 /////////////////////////////////////////////////////////////////////////////
 
