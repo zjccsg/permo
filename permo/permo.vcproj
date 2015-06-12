@@ -67,6 +67,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="version.lib iphlpapi.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -147,7 +148,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="version.lib iphlpapi.lib"
 				LinkIncremental="1"
+				UACExecutionLevel="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -190,7 +193,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MFNetTraffic.cpp"
+				RelativePath=".\NOperatingSystem.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NProgressBar.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\utils\PcapNetFilter.cpp"
 				>
 			</File>
 			<File
@@ -199,6 +210,10 @@
 			</File>
 			<File
 				RelativePath=".\permoDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\utils\PortCache.cpp"
 				>
 			</File>
 			<File
@@ -225,6 +240,18 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\TextProgressCtrl.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\utils\Utils.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\wnd.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -232,11 +259,31 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\globals.h"
+				>
+			</File>
+			<File
 				RelativePath=".\InfoDlg.h"
 				>
 			</File>
 			<File
-				RelativePath=".\MFNetTraffic.h"
+				RelativePath=".\MyTimer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NOperatingSystem.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NProgressBar.h"
+				>
+			</File>
+			<File
+				RelativePath=".\utils\Packet.h"
+				>
+			</File>
+			<File
+				RelativePath=".\utils\PcapNetFilter.h"
 				>
 			</File>
 			<File
@@ -245,6 +292,10 @@
 			</File>
 			<File
 				RelativePath=".\permoDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\utils\PortCache.h"
 				>
 			</File>
 			<File
@@ -261,6 +312,18 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TextProgressCtrl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\utils\Utils.h"
+				>
+			</File>
+			<File
+				RelativePath=".\wnd.h"
 				>
 			</File>
 		</Filter>

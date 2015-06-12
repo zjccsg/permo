@@ -23,4 +23,16 @@ public:
 	double netup;
 	double netdown;
 	HICON hIcon;
+
+	bool active;
+
+	// Valid Only When Active
+	bool dirty;
+
+	int txRate;
+	int rxRate;
+	int prevTxRate;	//up
+	int prevRxRate; //down
+
+	int pid; // Note: A "Process" item may corresponds to multiple pids
 };

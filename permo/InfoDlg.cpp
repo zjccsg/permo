@@ -5,13 +5,20 @@
 #include "permo.h"
 #include "InfoDlg.h"
 
+extern int nTempDisk;		//硬盘温度
+extern int nTempCpu;
+extern BOOL gIsMsr;
 extern unsigned int nSkin;
-// 总的上传流量
-extern DWORD total_net_up;
-// 总的下载流量
-extern DWORD total_net_down;
+
+extern vector<CProInfo*> vecProInfo;
+
+extern vector<CProInfo*> vecCpu;
+extern vector<CProInfo*> vecMem;
+extern vector<CProInfo*> vecNet;
+
 extern bool bShowNetInfo;
 extern unsigned int nFontSize;
+extern int processor_count_;
 DWORD id;
 // CInfoDlg 对话框
 
@@ -34,6 +41,11 @@ bool SortByCpu(const CProInfo * v1, const CProInfo * v2)
 bool SortByMem(const CProInfo * v1, const CProInfo * v2)
 {
 	return v1->mem > v2->mem;//降序排列
+}
+
+bool SortByNet(const CProInfo * v1, const CProInfo * v2)
+{
+	return (v1->prevTxRate + v1->prevRxRate) > (v2->prevTxRate + v2->prevRxRate);//降序排列
 }
 
 IMPLEMENT_DYNAMIC(CInfoDlg, CDialog)
@@ -75,6 +87,7 @@ void CInfoDlg::OnTimer(UINT_PTR nIDEvent)
 		//进行清理内存操作
 		vecCpu.clear();
 		vecMem.clear();
+		vecNet.clear();
 		GetProInfoVec();
 		Invalidate(FALSE);
 	}
@@ -106,11 +119,12 @@ void CInfoDlg::OnPaint()
 BOOL CInfoDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
+	nTempDisk = 0;
 	//提升权限
 	DebugPrivilege(true);
-	processor_count_ = get_processor_number();
 
 	GetProInfoVec();
+	SetTimer(1, 1100, NULL);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 异常: OCX 属性页应返回 FALSE
@@ -130,6 +144,7 @@ void CInfoDlg::PostNcDestroy()
 
 	CDialog::PostNcDestroy();
 	delete this;
+	CoUninitialize();
 	//权限还原
 	DebugPrivilege(false);
 }
@@ -177,56 +192,34 @@ void CInfoDlg::DrawInfo(CDC * pDC)
 	//MessageBox(strTemp);
 	rcTitleText.top = 30;
 	rcTitleText.bottom = 50;
-	double netup = total_net_up / 1024.0;
-	if (netup >= 1000)
-	{
-		netup /= 1024.0;
-		if (netup >= 1000)
-		{
-			netup /= 1024.0;
-			strTemp.Format(_T("上传: %.1fGB"), netup);
-		}
-		else
-		{
-			strTemp.Format(_T("上传: %.1fMB"), netup);
-		}
-	}
-	else
-	{
-		strTemp.Format(_T("上传: %luKB"), netup);
-	}
+
+	strTemp.Format(_T("进程数量: %d"), nProNum);
+	
 	pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 	rcTitleText.left = 155 + 10;
 	rcTitleText.right = 230;
-	strTemp.Format(_T("进程数: %d"), nProNum);
-	pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	
+	if (gIsMsr)
+	{
+		strTemp.Format(_T("CPU: %d℃"), nTempCpu);
+		pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	}
+	else
+	{
+		strTemp = _T("预留");
+		pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	}
+	
 	rcTitleText.left = 25;
 	rcTitleText.right = 155;
 	rcTitleText.top = 50;
 	rcTitleText.bottom = 70;
-	double netdown = total_net_down / 1024.0;
-	if (netdown >= 1000)
-	{
-		netdown /= 1024.0;
-		if (netdown >= 1000)
-		{
-			netdown /= 1024.0;
-			strTemp.Format(_T("下载: %.1fGB"), netdown);
-		}
-		else
-		{
-			strTemp.Format(_T("下载: %.1fMB"), netdown);
-		}
 
-	}
-	else
-	{
-		strTemp.Format(_T("下载: %.1fKB"), netdown);
-	}
+	strTemp.Format(_T("硬盘温度: %d℃"), nTempDisk);
 	pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 	rcTitleText.left = 155 + 10;
 	rcTitleText.right = 230;
-	strTemp = _T("预留位置:");
+	strTemp = _T("预留");
 	pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
 	//列表两个小标题
@@ -295,6 +288,42 @@ void CInfoDlg::DrawInfo(CDC * pDC)
 
 		//接着绘制每块具体内容
 		pDC->SetTextColor(RGB(80, 80, 80));
+
+		rcLeftText.left = 30;
+		rcLeftText.right = 155;
+		rcLeftText.top = 120;
+		rcLeftText.bottom = 140;
+		for (i=0; i<3; i++)
+		{
+			rcIcon.top = rcLeftText.top + 2;
+			rcIcon.bottom = rcLeftText.bottom -2;
+			if (vecNet[i]->hIcon)
+			{
+				DrawIconEx(pDC->GetSafeHdc(), rcIcon.left, rcIcon.top, vecNet[i]->hIcon, rcIcon.Width(), rcIcon.Height(), 0, NULL, DI_NORMAL);
+			}
+			else
+			{
+				DrawIconEx(pDC->GetSafeHdc(), rcIcon.left, rcIcon.top, LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_PROCESS)), rcIcon.Width(), rcIcon.Height(), 0, NULL, DI_NORMAL);
+			}
+			strTemp.Format(_T("%s"), vecNet[i]->szExeFile);
+			pDC->DrawText(strTemp, &rcLeftText, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+			rcRightText = rcLeftText;
+			rcRightText.left = 165;
+			rcRightText.right = 240;
+			double net;
+			net = (vecNet[i]->prevRxRate + vecNet[i]->prevTxRate) / 1024.0;
+			if (net > 1000)
+			{
+				strTemp.Format(_T("%.1fM/s"), net/1024);
+			}
+			else
+			{
+				strTemp.Format(_T("%.1fK/s"), net);
+			}
+			pDC->DrawText(strTemp, &rcRightText, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+			rcLeftText.top += 20;
+			rcLeftText.bottom += 20;
+		}
 
 		rcLeftText.left = 30;
 		rcLeftText.right = 155;
@@ -452,7 +481,7 @@ bool CInfoDlg::DebugPrivilege(bool bEnable)
 
 	if(OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES,&hToken) == 0)
 	{
-		printf("OpenProcessToken Error: %d\n",GetLastError());
+		//printf("OpenProcessToken Error: %d\n",GetLastError());
 		bResult = FALSE;
 	}
 	TokenPrivileges.PrivilegeCount           = 1;
@@ -476,13 +505,6 @@ uint64_t CInfoDlg::file_time_2_utc(const FILETIME* ftime)
 	li.LowPart = ftime->dwLowDateTime;  
 	li.HighPart = ftime->dwHighDateTime;  
 	return li.QuadPart;
-}
-
-int CInfoDlg::get_processor_number(void)
-{
-	SYSTEM_INFO info;  
-	GetSystemInfo(&info);  
-	return (int)info.dwNumberOfProcessors;
 }
 
 double CInfoDlg::get_cpu_usage(HANDLE hProcess, CProInfo* pProInfo)
@@ -545,6 +567,7 @@ double CInfoDlg::get_cpu_usage(HANDLE hProcess, CProInfo* pProInfo)
 //获取进程信息并存入vector
 void CInfoDlg::GetProInfoVec(void)
 {
+	//WinExec("cmd /c tasklist /v >d:\\tasklist.txt",SW_HIDE);
 	PROCESSENTRY32 pe32;
 	//设置大小
 	pe32.dwSize=sizeof(pe32);
@@ -621,12 +644,20 @@ void CInfoDlg::GetProInfoVec(void)
 	vecCpu.push_back(vecProInfo[2]);
 	vecCpu.push_back(vecProInfo[3]);
 	vecCpu.push_back(vecProInfo[4]);
+	//按内存排序（降序）
 	sort(vecProInfo.begin(),vecProInfo.end(),SortByMem);
 	vecMem.push_back(vecProInfo[0]);
 	vecMem.push_back(vecProInfo[1]);
 	vecMem.push_back(vecProInfo[2]);
 	vecMem.push_back(vecProInfo[3]);
 	vecMem.push_back(vecProInfo[4]);
+	//按网络排序（降序）
+	sort(vecProInfo.begin(),vecProInfo.end(),SortByNet);
+	vecNet.push_back(vecProInfo[0]);
+	vecNet.push_back(vecProInfo[1]);
+	vecNet.push_back(vecProInfo[2]);
+	vecNet.push_back(vecProInfo[3]);
+	vecNet.push_back(vecProInfo[4]);
 	//vector<CProInfo*>::iterator iter;
 	//for(iter=vecProInfo.begin();iter!=vecProInfo.end();iter++)
 	//{

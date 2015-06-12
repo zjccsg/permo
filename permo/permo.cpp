@@ -93,6 +93,5 @@ int CpermoApp::ExitInstance()
 		ReleaseMutex(m_hMutex);
 		CloseHandle(m_hMutex);
 	}
-
 	return CWinApp::ExitInstance();
 }

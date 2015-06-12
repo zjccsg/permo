@@ -11,6 +11,13 @@ CProInfo::CProInfo(void)
 	netdown = 0.0;
 	bExit = TRUE;
 	hIcon = NULL;
+
+	active = false;
+	dirty = false;
+	txRate = 0;	//up
+	rxRate = 0;	//down
+	prevTxRate = 0;
+	prevTxRate = 0;
 }
 
 CProInfo::~CProInfo(void)
