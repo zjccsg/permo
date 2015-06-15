@@ -3263,7 +3263,12 @@ void CpermoDlg::TimerCallbackTemp(DWORD dwUser)
 		int idle = (int)CompareFileTime(p->preidleTime, p->idleTime);
 		int kernel = (int)CompareFileTime(p->prekernelTime, p->kernelTime);
 		int user = (int)CompareFileTime(p->preuserTime, p->userTime);
-		int cpu = (kernel + user - idle) * 100 / (kernel + user);
+		int cpu = 0;
+		//ÐÝÃß»½ÐÑ£¬Îª0£¬³ýÁã±ÀÀ£
+		if ((kernel + user) != 0)
+		{
+			cpu = (kernel + user - idle) * 100 / (kernel + user);
+		}
 		//int cpuidle = (idle)* 100 / (kernel + user);
 		p->preidleTime = p->idleTime;
 		p->prekernelTime = p->kernelTime;
