@@ -172,4 +172,5 @@ public:
 	void get_processor_number(void);
 	CHighResolutionTimer mm_Timer;
 	static void TimerCallbackTemp(DWORD dwUser);
+	void ShowTempInfo(void);
 };

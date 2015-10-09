@@ -21,6 +21,12 @@
 #define IOCTL_OLS_READ_MSR \
 	CTL_CODE(OLS_TYPE, 0x821, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
+#define SHOW_CPU_USAGE 0
+#define SHOW_MEM_USAGE 1
+#define SHOW_DISK_TEMP 2
+#define SHOW_CPU_TEMP 3
+#define SHOW_DISK_USAGE 4
+
 HANDLE gHandle = INVALID_HANDLE_VALUE;
 HANDLE gHandle2 = INVALID_HANDLE_VALUE;
 TCHAR gDriverPath[MAX_PATH];
@@ -37,9 +43,9 @@ BOOL OpenDriver(int driveId);
 void Remove();
 
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
+// #ifdef _DEBUG
+// #define new DEBUG_NEW
+// #endif
 
 CpermoDlg *pThis;
 
@@ -48,6 +54,8 @@ unsigned int nSkin;			//皮肤编号
 int nTempDisk=0;		//硬盘温度
 //明细窗口显示2部分(true)或者3部分(false)
 bool bShowNetInfo;
+//是否进行温度监控,包括CPU和硬盘温度
+bool bShowTempInfo;
 int nTempCpu=0;		//cpu温度
 //bool bIsWindowsVistaOrGreater;
 unsigned int nFontSize;
@@ -61,7 +69,6 @@ CMenu              m_BandMenu;
 CMenu              m_BandFontSizeMenu;
 CMenu              m_BandWidthMenu;
 CMenu              m_BandHeightMenu;
-
 
 // Capture thread
 HANDLE g_hCaptureThread;
@@ -78,6 +85,8 @@ vector<CProInfo*> vecProInfo;
 vector<CProInfo*> vecCpu;
 vector<CProInfo*> vecMem;
 vector<CProInfo*> vecNet;
+
+PcapNetFilter filter;
 
 void Lock()
 {
@@ -167,23 +176,23 @@ void OnPacket(PacketInfoEx *pi)
 }
 static DWORD WINAPI CaptureThread(LPVOID lpParam)
 {
-	PcapNetFilter filter;
+	
 	PacketInfo pi;
 	PacketInfoEx pie;
 
 	PortCache pc;
 
 	// Init Filter ------------------------------------------------------------
-	if( !filter.Init())
-	{
-		return 1;
-	}
+// 	if( !filter.Init())
+// 	{
+// 		return 1;
+// 	}
 
 	// Find Devices -----------------------------------------------------------
-	if( !filter.FindDevices())
-	{
-		return 2;
-	}
+// 	if( !filter.FindDevices())
+// 	{
+// 		return 2;
+// 	}
 
 	// Select a Device --------------------------------------------------------
 	if( !filter.Select(g_iAdapter))
@@ -224,21 +233,26 @@ static DWORD WINAPI CaptureThread(LPVOID lpParam)
 			pid = pc.GetUdpPortPid(pi.local_port);
 			pid = ( pid == 0 ) ? -1 : pid;
 		}
-
-		// - Fill PacketInfoEx
-		memcpy(&pie, &pi, sizeof(pi));
-
-		pie.pid = pid;
-		pie.puid = processUID;
 		
 		if (pid != -1)
 		{
+			// - Fill PacketInfoEx
+			memcpy(&pie, &pi, sizeof(pi));
+
+			pie.pid = pid;
+			pie.puid = processUID;
+
 			OnPacket(&pie);
+		}
+		else
+		{
+			TRACE("pid=-1\n");
+			Sleep(50);
 		}
 	}
 
 	// End --------------------------------------------------------------------
-	filter.End();
+/*	filter.End();*/
 
 	return 0;
 }
@@ -654,8 +668,8 @@ BOOL CpermoDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-	//AllocConsole();
-	//freopen("CONOUT$","w",stdout);
+// 	AllocConsole();
+// 	freopen("CONOUT$","w",stdout);
 	//bIsWindowsVistaOrGreater = false;
 	//判断操作系统版本
 	get_processor_number();
@@ -710,7 +724,6 @@ BOOL CpermoDlg::OnInitDialog()
 		AfxMessageBox(_T("文件丢失"));
 	}
 
-	PcapNetFilter filter;
 	// Init Filter
 	if( !filter.Init())
 	{
@@ -756,7 +769,7 @@ BOOL CpermoDlg::OnInitDialog()
 	g_nAdapters = filter.FindDevices();
 	if( g_nAdapters <= 0 )
 	{
-		AfxMessageBox(_T("No network adapters has been found on this machine."));
+		AfxMessageBox(_T("没有发现网络适配器接口，可能驱动加载失败"));
 	}
 	// Get Device Names
 	for(int i = 0; i < g_nAdapters; i++)
@@ -770,7 +783,7 @@ BOOL CpermoDlg::OnInitDialog()
 		}
 	}
 	// End
-	filter.End();
+/*	filter.End();*/
 
 	strNetDown.Format(_T("0.0KB/S"));
 	strNetUp.Format(_T("0.0KB/S"));
@@ -866,6 +879,14 @@ BOOL CpermoDlg::OnInitDialog()
 	{
 		m_Menu.CheckMenuItem(IDM_SHOWNETINFO, MF_BYCOMMAND | MF_UNCHECKED);
 	}
+	if (bShowTempInfo)
+	{
+		m_Menu.CheckMenuItem(IDM_SHOWTEMPINFO, MF_BYCOMMAND | MF_CHECKED);
+	}
+	else
+	{
+		m_Menu.CheckMenuItem(IDM_SHOWTEMPINFO, MF_BYCOMMAND | MF_UNCHECKED);
+	}
 	//需要显示任务栏标尺则进行创建
 	if (bShowBand)
 	{
@@ -943,8 +964,8 @@ BOOL CpermoDlg::OnInitDialog()
 	//SetTimer(1, 1000, NULL);
 	//每隔1.8秒检测全屏程序
 	SetTimer(2, 1800, NULL);
-	//每隔2.5分钟重新启动一下监控
-	SetTimer(3, 150000, NULL);
+	//每隔2分钟重新启动一下监控,防止监控失效,暂时这么做
+	SetTimer(3, 120000, NULL);
 	
 	::SetWindowLong( m_hWnd, GWL_EXSTYLE, GetWindowLong(m_hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
 	::SetLayeredWindowAttributes( m_hWnd, 0, nTrans, LWA_ALPHA); // 120是透明度，范围是0～255
@@ -1555,6 +1576,9 @@ void CpermoDlg::OnRButtonDown(UINT nFlags, CPoint point)
 	case IDM_SHOWNETINFO:
 		ShowNetInfo();
 		break;
+	case IDM_SHOWTEMPINFO:
+		ShowTempInfo();
+		break;
 	case IDM_SHOWBAND:
 		ShowBand();
 		break;
@@ -1677,14 +1701,22 @@ void CpermoDlg::OnOrange()
 void CpermoDlg::OnExit()
 {
 	// TODO:  在此添加命令处理程序代码
-	if (!SaveConfig())
-	{
-		AfxMessageBox(_T("额...配置信息保存失败！"));
-	}
+	mm_Timer.KillTimer();
+	KillTimer(2);
+	KillTimer(3);
+	pInfoDlg->KillTimer(1);
+
 	if (g_bCapture)
 	{
 		StopCapture();
 	}
+	filter.End();
+
+	if (!SaveConfig())
+	{
+		AfxMessageBox(_T("额...配置信息保存失败！"));
+	}
+	
 	Remove();
 	DeleteFiles();
 	OnOK();
@@ -1706,7 +1738,9 @@ void CpermoDlg::InitPopMenu(int nCount)
 	m_Menu.AppendMenu(MF_BYCOMMAND, IDM_TOPMOST, _T("保持悬浮窗置顶"));
 	m_Menu.AppendMenu(MF_BYCOMMAND, IDM_AUTOHIDE, _T("开启悬浮窗贴边隐藏"));
 	m_Menu.AppendMenu(MF_BYCOMMAND, IDM_SHOWONESIDEINFO, _T("贴边隐藏显示一侧信息"));
+	m_Menu.AppendMenu(MF_BYPOSITION | MF_SEPARATOR);
 	m_Menu.AppendMenu(MF_BYCOMMAND, IDM_SHOWNETINFO, _T("显示流量监控信息"));
+	m_Menu.AppendMenu(MF_BYCOMMAND, IDM_SHOWTEMPINFO, _T("显示温度监控信息"));
 	m_Menu.AppendMenu(MF_BYCOMMAND, IDM_SHOWBAND, _T("显示任务栏标尺"));
 	m_Menu.AppendMenu(MF_BYCOMMAND, IDM_LOCKWNDPOS, _T("锁定悬浮窗位置"));
 	m_Menu.AppendMenu(MF_BYPOSITION | MF_SEPARATOR);
@@ -1802,8 +1836,8 @@ void CpermoDlg::OpenConfig()
 	::GetCurrentDirectory(256, direc);//获取当前目录函数
 	TCHAR temp[256];
 	wsprintf(temp, _T("%s\\config.ini"), direc);
-	int left, top, topmost, skin, autohide, trans, showway, shownetinfo,
-		fontsize, showband, bandfontsize, bandwidth, bandheight,
+	int left, top, topmost, skin, autohide, trans, showway, shownetinfo, 
+		showtempinfo, fontsize, showband, bandfontsize, bandwidth, bandheight,
 		fullscreen, lockwndpos, hidewndsides, bandshowcpu, bandshowmem,
 		bandshownetup, bandshownetdown, bandshowdisktem, bandshowcputem,
 		adapter, showonesideinfo;
@@ -1815,6 +1849,7 @@ void CpermoDlg::OpenConfig()
 	trans = ::GetPrivateProfileInt(_T("Main"), _T("trans"), -1, temp);
 	showway = ::GetPrivateProfileInt(_T("Main"), _T("showway"), -1, temp);
 	shownetinfo = ::GetPrivateProfileInt(_T("Main"), _T("shownetinfo"), -1, temp);
+	showtempinfo = ::GetPrivateProfileInt(_T("Main"), _T("showtempinfo"), -1, temp);
 	fontsize = ::GetPrivateProfileInt(_T("Main"), _T("fontsize"), -1, temp);
 	showband = ::GetPrivateProfileInt(_T("Main"), _T("showband"), -1, temp);
 	bandfontsize = ::GetPrivateProfileInt(_T("Main"), _T("bandfontsize"), -1, temp);
@@ -1848,18 +1883,18 @@ void CpermoDlg::OpenConfig()
 	{
 		rCurPos.top = top;
 	}
-	if (1 == topmost)
+	if (0 == topmost)
 	{
-		bTopmost = TRUE;
+		bTopmost = FALSE;
 	}
 	else
 	{
-		bTopmost = FALSE;
+		bTopmost = TRUE;
 	}
 	if (skin != IDM_GREEN && skin != IDM_BLUE && skin != IDM_BLACK
 		&& skin != IDM_RED && skin != IDM_ORANGE)
 	{
-		nSkin = IDM_GREEN;
+		nSkin = IDM_BLUE;
 	}
 	else
 	{
@@ -1889,13 +1924,21 @@ void CpermoDlg::OpenConfig()
 	{
 		nShowWay = showway;
 	}
-	if (1 == shownetinfo)
+	if (0 == shownetinfo)
 	{
-		bShowNetInfo = TRUE;
+		bShowNetInfo = false;
 	}
 	else
 	{
-		bShowNetInfo = FALSE;
+		bShowNetInfo = true;
+	}
+	if (1 == showtempinfo)
+	{
+		bShowTempInfo = true;
+	}
+	else
+	{
+		bShowTempInfo = false;
 	}
 	if (-1 == fontsize || fontsize < 12 || fontsize > 18)
 	{
@@ -2035,8 +2078,8 @@ BOOL CpermoDlg::SaveConfig()
 	TCHAR temp[256];
 	wsprintf(temp, _T("%s\\config.ini"), direc);
 	TCHAR cLeft[32], cTop[32], cTopMost[32], cSkin[32], cAutoHide[32], 
-		cTrans[32], cShowWay[32], cShowNetInfo[32], cFontSize[32], 
-		cShowBand[32], cBandFontSize[32], cBandWidth[32],
+		cTrans[32], cShowWay[32], cShowNetInfo[32], cShowTempInfo[32], 
+		cFontSize[32], cShowBand[32], cBandFontSize[32], cBandWidth[32],
 		cBandHeight[32], cFullScreen[32], cLockWndPos[32], cHideWndSides[32],
 		cBandShowCpu[32], cBandShowMem[32], cBandShowNetUp[32], cBandShowNetDown[32],
 		cBandShowDiskTem[32], cBandShowCpuTem[32], cAdapter[32], cShowOneSideInfo[32];
@@ -2048,6 +2091,7 @@ BOOL CpermoDlg::SaveConfig()
 	_itow_s(nTrans, cTrans, 10);
 	_itow_s(nShowWay, cShowWay, 10);
 	_itow_s(bShowNetInfo, cShowNetInfo, 10);
+	_itow_s(bShowTempInfo, cShowTempInfo, 10);
 	_itow_s(nFontSize, cFontSize, 10);
 	_itow_s(bShowBand, cShowBand, 10);
 	_itow_s(nBandFontSize, cBandFontSize, 10);
@@ -2072,6 +2116,7 @@ BOOL CpermoDlg::SaveConfig()
 	::WritePrivateProfileString(_T("Main"), _T("trans"), cTrans, temp);
 	::WritePrivateProfileString(_T("Main"), _T("showway"), cShowWay, temp);
 	::WritePrivateProfileString(_T("Main"), _T("shownetinfo"), cShowNetInfo, temp);
+	::WritePrivateProfileString(_T("Main"), _T("showtempinfo"), cShowTempInfo, temp);
 	::WritePrivateProfileString(_T("Main"), _T("fontsize"), cFontSize, temp);
 	::WritePrivateProfileString(_T("Main"), _T("showband"), cShowBand, temp);
 	::WritePrivateProfileString(_T("Main"), _T("bandfontsize"), cBandFontSize, temp);
@@ -2518,6 +2563,20 @@ void CpermoDlg::ShowNetInfo(void)
 	{
 		bShowNetInfo = true;
 		m_Menu.CheckMenuItem(IDM_SHOWNETINFO, MF_BYCOMMAND | MF_CHECKED);
+	}
+}
+
+void CpermoDlg::ShowTempInfo(void)
+{
+	if (bShowTempInfo)
+	{
+		bShowTempInfo = false;
+		m_Menu.CheckMenuItem(IDM_SHOWTEMPINFO, MF_BYCOMMAND | MF_UNCHECKED);
+	}
+	else
+	{
+		bShowTempInfo = true;
+		m_Menu.CheckMenuItem(IDM_SHOWTEMPINFO, MF_BYCOMMAND | MF_CHECKED);
 	}
 }
 
@@ -2977,6 +3036,7 @@ void CpermoDlg::StopCapture(void)
 {
 	g_bCapture = false;
 	WaitForSingleObject(g_hCaptureThread, INFINITE);
+	CloseHandle(g_hCaptureThread);
 }
 
 void CpermoDlg::StartCapture(void)
@@ -3251,7 +3311,7 @@ void CpermoDlg::get_processor_number(void)
 void CpermoDlg::TimerCallbackTemp(DWORD dwUser)
 {
 	CpermoDlg* p = (CpermoDlg *)dwUser; 
-	if (gIsMsr)
+	if (gIsMsr && bShowTempInfo)
 	{
 		p->GetCpuTemp();
 	}
@@ -3328,7 +3388,7 @@ void CpermoDlg::TimerCallbackTemp(DWORD dwUser)
 	// 			printf("全部可用的内存:\t%I64d\r\n", memStatex.ullAvailPageFile);
 	// 			//全部的虚拟内存。
 	// 			printf("全部的内存:\t%I64d\r\n", memStatex.ullTotalVirtual);
-	if ((p->bShowBand && p->bBandShowDiskTem) || p->bInfoDlgShowing)
+	if (bShowTempInfo && ((p->bShowBand && p->bBandShowDiskTem) || p->bInfoDlgShowing))
 	{
 		p->GetDiskTem();
 	}
@@ -3415,14 +3475,14 @@ void CpermoDlg::TimerCallbackTemp(DWORD dwUser)
 		else if (4 == nBandShow)
 		{
 			CString strDiskTem;
-			strDiskTem.Format(_T("硬盘:%d°"), nTempDisk);
+			bShowTempInfo?strDiskTem.Format(_T("硬盘:%d°"), nTempDisk):strDiskTem.Format(_T("硬盘:--°"));
 			p->pcoControl->SetPosEx(0);
 			p->pcoControl->ShowMyText(strDiskTem, true);
 		}
 		else if (5 == nBandShow)
 		{
 			CString strCpuTem;
-			strCpuTem.Format(_T("CPU:%d°"), nTempCpu);
+			bShowTempInfo?strCpuTem.Format(_T("CPU:%d°"), nTempCpu):strCpuTem.Format(_T("CPU:--°"));
 			p->pcoControl->SetPosEx(0);
 			p->pcoControl->ShowMyText(strCpuTem, true);
 		}
@@ -3434,3 +3494,4 @@ void CpermoDlg::TimerCallbackTemp(DWORD dwUser)
 	}
 	p->Invalidate(FALSE);
 }
+

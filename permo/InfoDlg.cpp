@@ -17,6 +17,7 @@ extern vector<CProInfo*> vecMem;
 extern vector<CProInfo*> vecNet;
 
 extern bool bShowNetInfo;
+extern bool bShowTempInfo;
 extern unsigned int nFontSize;
 extern int processor_count_;
 DWORD id;
@@ -199,24 +200,24 @@ void CInfoDlg::DrawInfo(CDC * pDC)
 	rcTitleText.left = 155 + 10;
 	rcTitleText.right = 230;
 	
-	if (gIsMsr)
+	if (gIsMsr && bShowTempInfo)
 	{
-		strTemp.Format(_T("CPU: %d°Ê"), nTempCpu);
-		pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		strTemp.Format(_T("CPU: %d°„"), nTempCpu);
 	}
 	else
 	{
-		strTemp = _T("‘§¡Ù");
-		pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		strTemp = _T("CPU: --°„");
 	}
+	pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 	
 	rcTitleText.left = 25;
 	rcTitleText.right = 155;
 	rcTitleText.top = 50;
 	rcTitleText.bottom = 70;
-
-	strTemp.Format(_T("”≤≈ÃŒ¬∂»: %d°Ê"), nTempDisk);
+	
+	bShowTempInfo?strTemp.Format(_T("”≤≈ÃŒ¬∂»: %d°„"), nTempDisk):strTemp.Format(_T("”≤≈ÃŒ¬∂»: --°„"));
 	pDC->DrawText(strTemp, &rcTitleText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
 	rcTitleText.left = 155 + 10;
 	rcTitleText.right = 230;
 	strTemp = _T("‘§¡Ù");
@@ -629,7 +630,7 @@ void CInfoDlg::GetProInfoVec(void)
 			else
 			{
 				//GetProcessMemoryInfo failed.
-				GetLastError();
+				//GetLastError();
 			}
 		}
 		bMORE=::Process32Next(hProcessSnap,&pe32);
